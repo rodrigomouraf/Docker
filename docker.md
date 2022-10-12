@@ -14,7 +14,7 @@
 * [Docker Run](#docker-run)
 * [Imagens](#image)
 * [Containers](#containers)
-* [Imagens](#image)
+* [Dockerfile](#dockerfile)
 
 ## <a name='motivacao'></a>Motivação
 
@@ -89,6 +89,22 @@ Quando queremos executar um container usamos o comando docker run, mas o que ess
 Quando rodamos um docker run, o docker procura a imagem localmente, caso não exista essa imagem a baixa e valida sua hash e por último executa o container.
 
 ## <a name='image'></a>Imagens
+
+Imagens são receitas para criar containers, não é nada mais que um conjunto de camadas, as imagens não podem ser alteradas depois que são criadas pois elas são read only. Mas como podemos interagir e criar arquivos dentro quando usamos containers? simples a camada superior de um container tem uma camada adicional de read e write xD.
+
+Agora podemos responder o porque dos containers serem tão leves. Se analisarmos as informações acima, além de eles serem um processo do nosso sistema, ele consegue reaproveitar as camadas das imagens que já temos instaladas, adicionando apenas uma nova camada read/write para utilização, e o tamanho dessa nova camada vai ser proporcional a imagem de escrita.
+
+### Analisando imagens
+
+```bash
+docker inspect <id || nome imagem>
+```
+
+### Verificando as camadas da nossa imagem
+
+```bash
+docker history <id || nome imagem>
+```
 
 ### Instalando uma imagem localmente
 
@@ -187,6 +203,8 @@ Obs: O parâmetro -d é para o docker rodar em background não travando o termin
 docker exec -it pg bash
 ```
 
+Obs: i é do modo iterativo e o t é de tty, terminal padrão desse container.
+
 Acessando o container pg baseado na imagem postgres
 
 ```bash
@@ -201,19 +219,17 @@ Listando os databases
 
 Entrando em algum database requerido
 
-```
+```bash
 \c name_database;
 ```
 
 Listando as tables do database
 
-```
+```bash
 \dt;
 ```
 
-Obs: i é do modo iterativo e o t é de tty, terminal padrão desse container.
-
-## Dockerfile
+## <a name='dockerfile'></a>Dockerfile
 
 Criando uma imagem através de um Dockerfile
 	docker build -t nome_aplicacao .
