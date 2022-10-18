@@ -128,6 +128,16 @@ Obs: para remover uma imagem, a mesma não pode estar sendo utilizada por um con
 
 ## <a name='containers'></a>Containers
 
+### Criando um container com mapeamento de portas
+
+```bash
+docker run -d -p 8080:80 <imagem> 
+```
+
+No comando acima o docker vai procurar a imagem localmente, não encontrando vai baixar a imagem e depois vai validar o hash e executar o container.
+	-d não trava o terminal na execução.
+	-p mapea a porta host 8080 refletida na porta 80 do container, podemos usar P e o próprio container vai gerar a porta host.
+
 ### Listar todos os containers
 
 ```bash
@@ -146,7 +156,13 @@ docker ps || docker container ls
 docker stop <id || nome container>
 ```
 
-### Executando um container
+### Parando todos os containers em execução
+
+```bash
+docker stop $(docker container ls -q)
+```
+
+### Executando um container já existente
 
 ```bash
 docker start <id || nome container>
@@ -164,19 +180,15 @@ remove o container mesmo em execução:
 docker rm -f <id || nome container> 
 ```
 
-### Criando um container com mapeamento de portas
-
-```bash
-docker run -d -p 8080:80 <imagem> 
-```
-
-No comando acima o docker vai procurar a imagem localmente, não encontrando vai baixar a imagem e depois vai validar o hash e executar o container.
-	-d não trava o terminal na execução.
-	-p mapea a porta host 8080 refletida na porta 80 do container, podemos usar P e o próprio container vai gerar a porta host.
-
 ### Verificar o mapeamento de portas em relação ao host
 ```bash
 docker port <id || nome container>
+```
+
+### Copiando um container
+
+```bash
+docker tag <repository:tag> <new_name:tag>
 ```
 
 ### Modo Iterativo
@@ -231,6 +243,45 @@ Listando as tables do database
 
 ## <a name='dockerfile'></a>Dockerfile
 
-Criando uma imagem através de um Dockerfile
-	docker build -t nome_aplicacao .
+Abaixo segue um resumo do artigo do Alura: https://www.alura.com.br/artigos/desvendando-o-dockerfile
+
+### Criando uma imagem através de um Dockerfile
+
+```bash
+docker build -t nome_aplicacao .
+```
+
+### Algumas instruções Dockerfile
+
+```dockerfile
+FROM <image>         ->  Obrigatória -> Define qual será o ponto de partida da imagem
+WORKDIR /verificar   ->
+ARG PORT_BUILD=6000
+ENV PORT=$PORT_BUILD
+EXPOSE $PORT_BUILD
+COPY . .
+RUN ["command 1", "command 2", "command 3"] 
+RUN ["command 4"]
+ENTRYPOINT verificar
+```
+
+ADD 1: Faz cópia de um arquivo, diretório ou download de uma URL de nossa máquina host para dentro de uma imagem. Caso o arquivo esteja sendo passado com extensão tar, ele fará a descompressão automaticamente.
+
+COPY 1: Permite a passagem de arquivos ou diretórios.
+
+CMD 2:  Bem parecida com a intrução RUN. Executa apenas o comando quando criamo o container e não passamos parâmetro para ele. Executa apenas o último CMD encontrado. 
+
+ENTRYPOINT 2: Faz exatamente a mesma coisa que CMD mas seus parâmetros não são sobrescritos.
+
+EXPOSE: Serve como documentação para definir qual é a porta que a aplicação está rodando.
+
+FROM:  Obrigatória, define qual será o ponto de partida da imagem.
+
+RUN: Quando executado o commando de docker build . além de baixar a imagem ele também no processo de criação executará os comandos. O docker consegue reutilizar camadas de outra imagem através do uso de cache.
+
+VOLUME: Cria uma pasta em nosso container que será compartilhada entro o container e o host.
+
+WORKDIR: Define o nosso ambiente de trabalho. Com ela, definimos onde as instruções **CMD, RUN, ENTRYPOINT, ADD e COPY** executarão suas tarefas, além de definir o diretório padrão que será aberto ao executarmos o container.
+
+
 
