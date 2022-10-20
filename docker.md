@@ -15,6 +15,7 @@
 * [Containers](#containers)
 * [Dockerfile](#dockerfile)
 * [Persistência de dados](#persistencia_dados)
+* [Rede](#rede)
 
 ## <a name='motivacao'></a>Motivação
 
@@ -36,13 +37,13 @@ Mas será que é preciso fazer isso? Será que é preciso sempre nessas situaç�
 
 https://docs.docker.com/engine/install/
 
-## <a name='docker-hub'></a>Docker hub
+## <a name='docker-hub'>Docker hub</a>
 
 https://hub.docker.com/
 
-No docker hub, podemos verificar pacotes para serem instalados, documentações, fóruns, entre outros.
+No docker hub, podemos verificar pacotes para serem instalados, podemos salva nele nossas próprias imagens, documentações, fóruns, entre outros.
 
-## <a name='alguns-conceitos'></a>Alguns conceitos
+## <a name='alguns-conceitos'>Alguns conceitos</a>
 
 Containers dentro do Docker funcionam diretamente como processos dentro do nosso sistema. Enquanto uma máquina virtual terá etapas de virtualização dos sistemas operacionais. Por isso containers são mais leves em relação a uma máquina virtual.
 
@@ -76,7 +77,7 @@ Isolamento ao nível de processo dentro de cada container.
 
 Faz compartilhamento e isolamento, entre o host do nosso Kernel da máquina que está escutando o container.
 
-## <a name='hello-world'></a>Hello World
+## <a name='hello-world'>Hello World</a>
 
 ```bash
 docker run hello-world
@@ -84,7 +85,7 @@ docker run hello-world
 
 
 
-## <a name='image'></a>Imagens
+## <a name='image'>Imagens</a>
 
 Imagens são receitas para criar containers, não é nada mais que um conjunto de camadas, as imagens não podem ser alteradas depois que são criadas pois elas são read only. Mas como podemos interagir e criar arquivos dentro quando usamos containers? simples a camada superior de um container tem uma camada adicional de read e write xD.
 
@@ -130,12 +131,18 @@ docker rmi $(docker image ls -aq)
 
 
 
-## <a name='containers'></a>Containers
+## <a name='containers'>Containers</a>
+
+### Criando um container
+
+```bash
+docker run --name <name_container>
+```
 
 ### Criando um container com mapeamento de portas
 
 ```bash
-docker run -d -p 8080:80 <imagem> 
+docker run --name <name_container> -d -p 8080:80 <imagem> 
 ```
 
 No comando acima o docker vai procurar a imagem localmente, não encontrando vai baixar a imagem e depois vai validar o hash e executar o container.
@@ -276,7 +283,7 @@ Listando as tables do database
 
 
 
-## <a name='dockerfile'></a>Dockerfile
+## <a name='dockerfile'>Dockerfile</a>
 
 Abaixo segue um resumo do artigo do Alura: https://www.alura.com.br/artigos/desvendando-o-dockerfile
 
@@ -318,7 +325,7 @@ VOLUME: Cria uma pasta em nosso container que será compartilhada entro o contai
 
 WORKDIR: Define o nosso ambiente de trabalho. Com ela, definimos onde as instruções **CMD, RUN, ENTRYPOINT, ADD e COPY** executarão suas tarefas, além de definir o diretório padrão que será aberto ao executarmos o container.
 
-## <a name='persistencia_dados'></a>Persistência de dados
+## <a name='persistencia_dados'>Persistência de dados</a>
 
 Por padrão, todos os arquivos criados dentro de um container são armazenados em uma camada gravável. Isso significa que os dados não são persistidos caso esse container deixe de existir, pode ser difícil retirar os dados do container para outros processos. A camada gravável é altamente acoplada ao host em que o container é executado.
 
@@ -384,9 +391,68 @@ docker volume prune
 docker run -it --tmpfs=<dir_desejado_no_container> <image>
 ```
 
-Também podemos utilizar usando mount
+Também podemos usar o mount
 
 ```bash
 docker run -it --mount type=tmpfs,destination=<dir_desejado_no_container> <image>
 ```
+
+## <a name='rede'>Rede</a>
+
+Agora que já aprendemos a fazer persistência de dados nos containers, como podemos fazer com que os conteiners se comuniquem entre si?
+
+Vamos nesse momento criar um container para testarmos e entendermos melhor essa parte de rede.
+
+```bash
+docker run --name ubuntu ubuntu
+```
+
+Agora que temos nosso container criado vamos o analisar melhor através do comando inspect:
+
+```bash
+docker inspect ubuntu
+```
+
+No final dos detalhes teremos networks, parte de rede, e dentro de nertwork teremos diversas configurações na parte de bridge.
+
+Verificando as redes existentes
+
+```bash
+docker network ls
+```
+
+### Configurando a comunicação entre containers
+
+Para que haja a comunicação entre nossos containers devemos criar nossa própria rede.
+
+```bash
+docker network create --driver bridge minha-bridge
+```
+
+### Depois de termos a nossa rede criada vamos criar nossos containers
+
+```bash
+docker run -it --name ubuntu --network minha-bridge ubuntu bash 
+```
+
+Dentro do terminal do container ubuntu vamos executar o comando
+
+```bash
+apt-get update
+apt-get install iputils-ping -y
+```
+
+Para o outro container vamos o executar em modo detach, ou seja, ele estará executando em segundo plano e definimos um sleep de 1 dia para que ele não finalize a tarefa logo em seguida de subir o container.
+
+```bash
+docker run -d --name pong --network minha-bridge ubuntu sleep 1d 
+```
+
+Quando o container ubuntu terminar de rodar as instalações que requisitamos nos passos acima, podemos rodar o comando para testar se a comunicação entre os containers estão rodando com sucesso. Para isso execute dentro do bash do container do ubuntu:
+
+```bash
+ping pong
+```
+
+
 
