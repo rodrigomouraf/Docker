@@ -11,10 +11,10 @@
 * [Docker Hub](#docker-hub)
 * [Alguns Conceitos](#alguns-conceitos)
 * [Hello World](#hello-world)
-* [Docker Run](#docker-run)
 * [Imagens](#image)
 * [Containers](#containers)
 * [Dockerfile](#dockerfile)
+* [Persistência de dados](#persistencia_dados)
 
 ## <a name='motivacao'></a>Motivação
 
@@ -44,7 +44,7 @@ No docker hub, podemos verificar pacotes para serem instalados, documentações,
 
 ## <a name='alguns-conceitos'></a>Alguns conceitos
 
-Conteriners dentro do Docker funcionam diretamente como processos dentro do nosso sistema. Enquanto uma máquina virtual terá etapas de virtualização dos sistemas operacionais. Por isso containers são mais leves em relação a uma máquina virtual.
+Containers dentro do Docker funcionam diretamente como processos dentro do nosso sistema. Enquanto uma máquina virtual terá etapas de virtualização dos sistemas operacionais. Por isso containers são mais leves em relação a uma máquina virtual.
 
 ### Namespace
 
@@ -82,11 +82,7 @@ Faz compartilhamento e isolamento, entre o host do nosso Kernel da máquina que 
 docker run hello-world
 ```
 
-## <a name='docker-run'></a>Docker Run
 
-Quando queremos executar um container usamos o comando docker run, mas o que esse comando realmente faz:
-
-Quando rodamos um docker run, o docker procura a imagem localmente, caso não exista essa imagem a baixa e valida sua hash e por último executa o container.
 
 ## <a name='image'></a>Imagens
 
@@ -126,6 +122,14 @@ docker rmi <nome || id da imagem>
 
 Obs: para remover uma imagem, a mesma não pode estar sendo utilizada por um container.
 
+### Removendo todas as imagens
+
+```bash
+docker rmi $(docker image ls -aq)
+```
+
+
+
 ## <a name='containers'></a>Containers
 
 ### Criando um container com mapeamento de portas
@@ -137,6 +141,12 @@ docker run -d -p 8080:80 <imagem>
 No comando acima o docker vai procurar a imagem localmente, não encontrando vai baixar a imagem e depois vai validar o hash e executar o container.
 	-d não trava o terminal na execução.
 	-p mapea a porta host 8080 refletida na porta 80 do container, podemos usar P e o próprio container vai gerar a porta host.
+
+### Run
+
+Quando queremos executar um container usamos o comando docker run, mas o que esse comando realmente faz:
+
+Quando rodamos um docker run, o docker procura a imagem localmente, caso não exista essa imagem a baixa e valida sua hash e por último executa o container.
 
 ### Listar todos os containers
 
@@ -180,7 +190,14 @@ remove o container mesmo em execução:
 docker rm -f <id || nome container> 
 ```
 
+### Remover todos os containers
+
+```bash
+docker container rm $(docker container ls -aq)
+```
+
 ### Verificar o mapeamento de portas em relação ao host
+
 ```bash
 docker port <id || nome container>
 ```
@@ -190,6 +207,22 @@ docker port <id || nome container>
 ```bash
 docker tag <repository:tag> <new_name:tag>
 ```
+
+### Tamanho virtual
+
+Olhando apenas os containers em uso
+
+```bash
+docker ps -s
+```
+
+Olhando todos os containers
+
+```bash
+docker ps -sa
+```
+
+Aqui teremos uma coluna chamada SIZE ela retorna tamanho_camada_rwMB(virtual tamanho_da_imagemMB)
 
 ### Modo Iterativo
 
@@ -241,6 +274,8 @@ Listando as tables do database
 \dt;
 ```
 
+
+
 ## <a name='dockerfile'></a>Dockerfile
 
 Abaixo segue um resumo do artigo do Alura: https://www.alura.com.br/artigos/desvendando-o-dockerfile
@@ -262,14 +297,14 @@ EXPOSE $PORT_BUILD
 COPY . .
 RUN ["command 1", "command 2", "command 3"] 
 RUN ["command 4"]
-ENTRYPOINT verificar
+ENTRYPOINT ["command 1", "command 2"]
 ```
 
 ADD 1: Faz cópia de um arquivo, diretório ou download de uma URL de nossa máquina host para dentro de uma imagem. Caso o arquivo esteja sendo passado com extensão tar, ele fará a descompressão automaticamente.
 
 COPY 1: Permite a passagem de arquivos ou diretórios.
 
-CMD 2:  Bem parecida com a intrução RUN. Executa apenas o comando quando criamo o container e não passamos parâmetro para ele. Executa apenas o último CMD encontrado. 
+CMD 2:  Bem parecida com a instrução RUN. Executa apenas o comando quando criamos o container e não passamos parâmetro para ele. Executa apenas o último CMD encontrado. 
 
 ENTRYPOINT 2: Faz exatamente a mesma coisa que CMD mas seus parâmetros não são sobrescritos.
 
@@ -277,11 +312,81 @@ EXPOSE: Serve como documentação para definir qual é a porta que a aplicação
 
 FROM:  Obrigatória, define qual será o ponto de partida da imagem.
 
-RUN: Quando executado o commando de docker build . além de baixar a imagem ele também no processo de criação executará os comandos. O docker consegue reutilizar camadas de outra imagem através do uso de cache.
+RUN: Quando executado o comando de docker build . além de baixar a imagem ele também no processo de criação executará os comandos. O docker consegue reutilizar camadas de outra imagem através do uso de cache.
 
 VOLUME: Cria uma pasta em nosso container que será compartilhada entro o container e o host.
 
 WORKDIR: Define o nosso ambiente de trabalho. Com ela, definimos onde as instruções **CMD, RUN, ENTRYPOINT, ADD e COPY** executarão suas tarefas, além de definir o diretório padrão que será aberto ao executarmos o container.
 
+## <a name='persistencia_dados'></a>Persistência de dados
 
+Por padrão, todos os arquivos criados dentro de um container são armazenados em uma camada gravável. Isso significa que os dados não são persistidos caso esse container deixe de existir, pode ser difícil retirar os dados do container para outros processos. A camada gravável é altamente acoplada ao host em que o container é executado.
+
+Existem duas formas de fazermos persistência de dados no container mesmo após a interrupção do container, podemos utilizar bind mounts ou volumes.
+
+A maneira de persistência recomendada pelo Docker para ser usada em produção é o volume, pois a área de volume é gerenciada pelo Docker dentro do seu file system. Segue link de artigo explicando um pouco mais sobre file system. https://www.freecodecamp.org/news/file-systems-architecture-explained/.
+
+O Docker também oferece suporte a containers que armazenam arquivos na memória na máquina host, ou seja, quando seu container parar seus dados não continuaram persistidos. No linux tmps mount é usado para executar o armazenamento na memória do sistema do host e no Windows o pipe nomeado será usado para armazenar arquivos na memória do sistema host. E pra que usar se ele não persiste, talvez seja legal caso vc esteja trabalhando com dados sensíveis.
+
+Para saber mais olhar a doc: https://docs.docker.com/storage/
+
+### Bound Mounts
+
+Neste momento iremos criar as persistências passando diretamente nosso host.  
+
+```bash
+docker run -it -v <dir_seu_host>:<dir_desejado_no_container> <image>
+```
+
+Maneira mais recomendada pelo Docker  por ser mais semântico:
+
+```bash
+docker run –it --mount type=bind,source=<dir_seu_host>,target=<dir_desejado_no_container> <image>
+```
+
+Para saber mais sobre -v ou --mount: https://docs.docker.com/storage/bind-mounts/
+
+### Volumes
+
+#### Verificando volumes dentro da máquina
+
+```bash
+docker volume ls
+```
+
+#### Criando Volumes
+
+```bash
+docker volume create <nome_volume> 
+```
+
+#### Fazendo persistência usando volumes
+
+Podemos utilizar o mount para criar esse exemplo:
+
+```bash
+docker run -it --mount source=<nome_volume>,target=<dir_desejado_no_container> <image>
+```
+
+Obs: Como estamos criando um container com persistência gerenciada pelo Docker através do volume não precisamos passar a flag type=bind.
+
+No exemplo acima caso o volume especificado não existisse o próprio Docker o criaria. 
+
+#### Removendo volumes não utilizados
+
+```bash
+docker volume prune
+```
+
+###  Tmpfs
+
+```bash
+docker run -it --tmpfs=<dir_desejado_no_container> <image>
+```
+
+Também podemos utilizar usando mount
+
+```bash
+docker run -it --mount type=tmpfs,destination=<dir_desejado_no_container> <image>
+```
 
