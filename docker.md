@@ -454,5 +454,120 @@ Quando o container ubuntu terminar de rodar as instalações que requisitamos no
 ping pong
 ```
 
+### Redes none e host
 
+#### None
+
+Quando utilizamos a rede none, ela remove a interface de rede, estamos dizendo que não haverá qualquer tipo de interface de rede vinculada ao container.
+
+#### Host
+
+Utilizando a rede host, estamos removendo o isolamento entre o container e o sistema, ou seja, será utilizado a mesma interface de rede do nosso host para executar nosso container.
+
+## Docker Compose
+
+O Docker Compose resolve problemas de executar múltiplos containers de uma só vez e de maneira coordenada, evitando executar cada comando de execução individualmente.
+
+Com o docker-compose podemos criar compartilhamento entre redes, volumes entre muitos outras funcionalidades, como hot reload para não precisarmos ficar recriando nossas imagens.
+
+### Rodando um docker-compose
+
+```bash
+docker-compose up -d
+```
+
+### Removendo um docker-compose
+
+```bash
+docker-compose down
+```
+
+Obs: Caso tenha dependências ou redes criadas para subir esse composer, no docker-compose down ocorre também a remoção dessas dependências.
+
+### Listando as composições
+
+```bash
+docker-compose ps
+```
+
+### Arquivo docker-compose
+
+```yaml
+version: "3.9"
+services:
+  <name_service>:
+    image: <image>
+    container_name: <nome-container>
+    networks:
+      - <nome-para-sua-rede>
+
+  alurabooks:
+    image: <image>
+    container_name: <nome-container>
+    networks:
+      - <nome-para-sua-rede>
+    ports:
+      - <port-container>:<port-host>
+
+networks:
+  compose-bridge:
+    driver: <tipo-de-network>
+```
+
+
+
+Observe que caso queiramos definir um compartilhamento de rede entre os containers, devemos dar os mesmos nomes da rede no parâmetro: <nome-para-sua-rede>, e no lugar do <tipo-de-network> colocar o parâmetro bridge.
+
+### Dependência entre container
+
+Quando temos dependências entre containers e queremos que o docker-composer respeite a ordem de montagem do arquivo utilizamos o parâmetro depends_on. Veja abaixo um exemplo do Alura que demonstra a maneira de utilizar:
+
+```yaml
+version: "3.9"
+services:
+  mongodb:
+    image: mongo:4.4.6
+    container_name: meu-mongo
+    networks:
+      - compose-bridge
+
+  alurabooks:
+    image: aluradocker/alura-books:1.0
+    container_name: alurabooks
+    networks:
+      - compose-bridge
+    ports:
+      - 3000:3000
+    depends_on:
+      - mongodb
+
+networks:
+  compose-bridge:
+    driver: bridge
+```
+
+### Hot reload
+
+Exemplo para modificar uma aplicação sem necessidade de recriar uma imagem.
+
+```yaml
+version: '3'
+services:
+    app:
+        build: .
+        command: npm start
+        restart: always
+        volumes:
+           - .:/usr/src/app
+           - nodemodules:/usr/src/app/node_modules
+
+volumes:
+    nodemodules: {}
+```
+
+
+
+
+
+ 
 
