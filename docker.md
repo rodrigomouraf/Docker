@@ -16,6 +16,7 @@
 * [Dockerfile](#dockerfile)
 * [Persistência de dados](#persistencia_dados)
 * [Rede](#rede)
+* [Docker Compose](#docker-compose)
 
 ## <a name='motivacao'></a>Motivação
 
